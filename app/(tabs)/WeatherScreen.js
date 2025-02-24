@@ -1,5 +1,9 @@
 import { useEffect } from "react";
-import { View } from "react-native-web";
+import { SafeAreaView, View } from "react-native";
+import { StyleSheet, Text, TextInput, Button } from "react-native";
+import React, { useState } from 'react';
+
+import { getWeather } from "../services/weatherApi";
 
 export default function WeatherScreen() {
     const [city, setCity] = useState('');
@@ -10,12 +14,8 @@ export default function WeatherScreen() {
         setWeather(response);
     }
 
-    useEffect(() => {
-        fetchWeather();
-    }, [city]);
-
     return (
-        <View style={styles.container}>
+        <SafeAreaView style={styles.container}>
             <Text style={styles.title}>Weer App</Text>
             <TextInput
                 style={styles.input}
@@ -25,13 +25,13 @@ export default function WeatherScreen() {
             />
             <Button title="Weer ophalen" onPress={fetchWeather} />
             {weather && (
-                <View style={styles.weatherContainer}>
+                <SafeAreaView style={styles.weatherContainer}>
                     <Text>🌡 Temperatuur: {weather.main.temp}°C</Text>
                     <Text>🌦 {weather.weather[0].description}</Text>
                     <Text>💨 Wind: {weather.wind.speed} m/s</Text>
-                </View>
+                </SafeAreaView>
             )}
-        </View>
+        </SafeAreaView>
     );
 }
 
