@@ -58,12 +58,14 @@ export default function WeatherScreen() {
                 onChangeText={handleCityChange}
             />
             <Button title="Weer ophalen" onPress={fetchWeather} />
-            {weather && (
+            {weather?.name && (
                 <SafeAreaView style={styles.weatherContainer}>
-                    <Text>📍 Locatie: {weather.name}, {weather.sys.country}</Text>
-                    <Text>🌡 Temperatuur: {weather.main.temp}°C</Text>
-                    <Text>🌦 {weather.weather[0].description}</Text>
-                    <Text>💨 Wind: {weather.wind.speed} m/s</Text>
+                    <Text>📍 Locatie: {weather.name}, {weather.country}</Text>
+                    <Text>🌡 Temperatuur: {weather.temperature}°C</Text>
+                    <Text>🌦 {weather.description}</Text>
+                    <Text>💨 Wind: {weather.wind} m/s</Text>
+                    <Text>🌧 Regen: {weather?.rain} mm</Text>
+                    <Text>❄️ Sneeuw: {weather?.snow} mm</Text>
                 </SafeAreaView>
             )}
             
