@@ -34,7 +34,7 @@ export default function WeatherScreen() {
             const response = await getFutureWeather(cityName);      
             console.log('Future Weather Response: ', response);
     
-            const dailyForecasts = response.list.filter(item => item.dt_txt.includes("12:00:00"));
+            const dailyForecasts = response.filter(item => item.time.includes("12:00:00"));
             setFutureWeather(dailyForecasts.slice(0, 5));
         } catch (error) {
             console.error("Error fetching future weather data:", error);
@@ -76,9 +76,9 @@ export default function WeatherScreen() {
                     keyExtractor={(item, index) => index.toString()}
                     renderItem={({ item }) => (
                         <View style={styles.futureWeatherItem}>
-                            <Text>{new Date(item.dt * 1000).toLocaleDateString()}</Text>
-                            <Text>{new Date(item.dt * 1000).toLocaleDateString()} - {Math.round(item.main.temp)}°C</Text>
-                            <Text>🌦 {item.weather[0].description}</Text>
+                            <Text>{new Date(item.time.replace(" ", "T")).toLocaleDateString()}</Text>
+                            <Text>{Math.round(item.temperature)}°C</Text>
+                            <Text>🌦 {item.description}</Text>
                         </View>
                     )}
                 />

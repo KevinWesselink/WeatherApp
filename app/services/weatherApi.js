@@ -40,13 +40,37 @@ export const getWeather = async (city) => {
 };
 
 export const getFutureWeather = async (city) => {
-    const API_KEY = "4cb2d3849235eba8a9798324431e16b2";
-    const url = `https://api.openweathermap.org/data/2.5/forecast?q=${city}&units=metric&lang=nl&appid=${API_KEY}`;
-    
-    const response = await fetch(url);
-    if (!response.ok) {
-        throw new Error("Weersvoorspelling kon niet worden opgehaald");
-    }
+    const apiKey = '4cb2d3849235eba8a9798324431e16b2';
+    const apiUrl = 'https://api.openweathermap.org/data/2.5/forecast';
 
-    return response.json();
+    try {
+        const response = await axios.get(apiUrl, {
+            params: {
+                q: city,
+                appid: apiKey,
+                units: 'metric',
+                lang: 'nl'
+            }
+        });
+
+        const data = response.data;
+
+        console.log('Data from forecast API: ', data);
+
+        const forecast = data.list.map(item => ({
+            time: item.dt_txt,
+            temperature: item.main.temp,
+            rain: item.rain ? item.rain["3h"] || 0 : 0,
+            snow: item.snow ? item.snow["3h"] || 0 : 0,
+            description: item.weather[0].description
+        }));
+
+        console.log('Future forecast: ', forecast);
+
+        console.log('API response status:', response.status);
+        return forecast;
+    } catch (error) {
+        console.error('Error fetching forecast data', error);
+    }
 };
+
