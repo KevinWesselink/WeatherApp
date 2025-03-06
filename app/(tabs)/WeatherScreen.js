@@ -34,8 +34,16 @@ export default function WeatherScreen() {
             const response = await getFutureWeather(cityName);      
             console.log('Future Weather Response: ', response);
     
-            const dailyForecasts = response.filter(item => item.time.includes("12:00:00"));
-            setFutureWeather(dailyForecasts.slice(0, 5));
+            const now = new Date();
+            const threeDaysLater = new Date();
+            threeDaysLater.setDate(now.getDate() + 3);
+
+            const hourlyForecasts = response.filter(item => {
+                const forecastDate = new Date(item.time.replace(" ", "T"));
+                return forecastDate >= now && forecastDate <= threeDaysLater;
+            });
+
+            setFutureWeather(hourlyForecasts);
         } catch (error) {
             console.error("Error fetching future weather data:", error);
             alert("Er is een fout opgetreden bij het ophalen van de weersvoorspelling.");
@@ -76,9 +84,11 @@ export default function WeatherScreen() {
                     keyExtractor={(item, index) => index.toString()}
                     renderItem={({ item }) => (
                         <View style={styles.futureWeatherItem}>
-                            <Text>{new Date(item.time.replace(" ", "T")).toLocaleDateString()}</Text>
+                            <Text>{new Date(item.time.replace(" ", "T")).toLocaleString()}</Text>
                             <Text>{Math.round(item.temperature)}°C</Text>
                             <Text>🌦 {item.description}</Text>
+                            <Text>🌧 Regen: {item.rain} mm</Text>
+                            <Text>❄️ Sneeuw: {item.snow} mm</Text>
                         </View>
                     )}
                 />
