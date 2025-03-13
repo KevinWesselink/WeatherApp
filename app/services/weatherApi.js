@@ -27,6 +27,8 @@ export const getWeather = async (city) => {
             description: data.weather[0].description,
             wind: data.wind.speed,
             clouds: data.clouds.all,
+
+            // API call bevat geen rain of snow velden. Data geeft dus altijd 0 aan.
             rain: typeof data.rain === "object" && "3h" in data.rain ? data.rain["3h"] : 0,
             snow: typeof data.snow === "object" && "3h" in data.snow ? data.snow["3h"] : 0
         };        
@@ -60,6 +62,8 @@ export const getFutureWeather = async (city) => {
         const forecast = data.list.map(item => ({
             time: item.dt_txt,
             temperature: item.main.temp,
+
+            // Data bevat geen rain of snow velden. Data geeft dus altijd 0 aan.
             rain: item.rain ? item.rain["3h"] || 0 : 0,
             snow: item.snow ? item.snow["3h"] || 0 : 0,
             description: item.weather[0].description

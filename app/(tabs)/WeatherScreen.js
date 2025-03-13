@@ -1,100 +1,80 @@
-import { useEffect } from "react";
-import { SafeAreaView, View, FlatList } from "react-native";
-import { StyleSheet, Text, TextInput, Button } from "react-native";
-import React, { useState } from 'react';
-
+import React, { useEffect, useState } from "react";
+import { 
+    SafeAreaView, Text, TextInput, Button, 
+    StyleSheet, useWindowDimensions, ScrollView
+} from "react-native";
+import moment from "moment";
 import { getWeather, getFutureWeather } from "../services/weatherApi";
 
 export default function WeatherScreen() {
-    const [city, setCity] = useState('');
+    const { width, height } = useWindowDimensions();
+    const isLandscape = width > height;
+    const [city, setCity] = useState("");
     const [weather, setWeather] = useState(null);
     const [futureWeather, setFutureWeather] = useState([]);
 
     const fetchWeather = async () => {
         try {
-            const filteredCity = city.replace(/[^A-Za-zÀ-ÿ\s]/g, '');
-    
+            const filteredCity = city.replace(/[^A-Za-zÀ-ÿ\s]/g, "").trimEnd();
             if (!filteredCity.trim()) {
-                alert("Voer een stad in zonder nummers of speciale tekens");
+                alert("Voer een geldige stad in");
                 return;
             }
-    
             const response = await getWeather(filteredCity);
             setWeather(response);
-    
             fetchFutureWeather(filteredCity);
         } catch (error) {
-            alert("Er is een fout opgetreden bij het ophalen van de weersvoorspelling.");
-            console.error('Error fetching weather data', error);
+            alert("Fout bij ophalen van weer");
+            console.log('Error: ', error);
         }
     };
-    
+
     const fetchFutureWeather = async (cityName) => {
         try {
-            const response = await getFutureWeather(cityName);      
-            console.log('Future Weather Response: ', response);
-    
+            const response = await getFutureWeather(cityName);
             const now = new Date();
             const threeDaysLater = new Date();
             threeDaysLater.setDate(now.getDate() + 3);
-
-            const hourlyForecasts = response.filter(item => {
+            setFutureWeather(response.filter(item => {
                 const forecastDate = new Date(item.time.replace(" ", "T"));
                 return forecastDate >= now && forecastDate <= threeDaysLater;
-            });
-
-            setFutureWeather(hourlyForecasts);
+            }));
         } catch (error) {
-            console.error("Error fetching future weather data:", error);
-            alert("Er is een fout opgetreden bij het ophalen van de weersvoorspelling.");
+            alert("Fout bij ophalen toekomstige weersvoorspelling");
+            console.log('Error: ', error);
         }
-    };        
-
-    const handleCityChange = (input) => {
-        setCity(input);
     };
 
     return (
-        <SafeAreaView style={styles.container}>
+        <SafeAreaView style={[styles.container, { flexDirection: isLandscape ? "row" : "column" }]}>
             <Text style={styles.title}>Weer App</Text>
-            <Text style={styles.text}>Voer een stad in om het weer op te halen</Text>
-            <Text style={styles.text}>Nummers of speciale tekens zijn niet toegestaan</Text>
             <TextInput
                 style={styles.input}
                 placeholder="Voer een stad in"
                 value={city}
-                onChangeText={handleCityChange}
+                onChangeText={setCity}
             />
             <Button title="Weer ophalen" onPress={fetchWeather} />
             {weather?.name && (
-                <SafeAreaView style={styles.weatherContainer}>
-                    <Text>📍 Locatie: {weather.name}, {weather.country}</Text>
-                    <Text>🌡 Temperatuur: {weather.temperature}°C</Text>
-                    <Text>🌦 {weather.description}</Text>
-                    <Text>💨 Wind: {weather.wind} m/s</Text>
-                    <Text>🌧 Regen: {weather?.rain} mm</Text>
-                    <Text>❄️ Sneeuw: {weather?.snow} mm</Text>
+                <SafeAreaView style={styles.weatherCard}>
+                    <Text style={styles.weatherText}>📍 {weather.name}, {weather.country}</Text>
+                    <Text style={styles.weatherText}>🌡 {weather.temperature}°C, 🌦 {weather.description}</Text>
+                    <Text style={styles.weatherText}>🌬 {weather.wind} m/s</Text>
+                    <Text style={styles.weatherText}>🌧 {weather.rain} mm, ❄️ {weather.snow} mm</Text>
                 </SafeAreaView>
             )}
-            
-            {futureWeather.length > 0 && (
-                <FlatList
-                    data={futureWeather}
-                    horizontal
-                    keyExtractor={(item, index) => index.toString()}
-                    renderItem={({ item }) => (
-                        <View style={styles.futureWeatherItem}>
-                            <Text>{new Date(item.time.replace(" ", "T")).toLocaleString()}</Text>
-                            <Text>{Math.round(item.temperature)}°C</Text>
-                            <Text>🌦 {item.description}</Text>
-                            <Text>🌧 Regen: {item.rain} mm</Text>
-                            <Text>❄️ Sneeuw: {item.snow} mm</Text>
-                        </View>
-                    )}
-                />
-            )}
+            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                {futureWeather.map((item, index) => (
+                    <SafeAreaView key={index} style={styles.futureWeatherItem}>
+                        <Text>{moment(item.time).format("dddd HH:mm")}</Text>
+                        <Text>{Math.round(item.temperature)}°C, {item.description}</Text>
+                        <Text>{item.wind} m/s</Text>
+                        <Text>🌧 {item.rain} mm, ❄️ {item.snow} mm</Text>
+                    </SafeAreaView>
+                ))}
+            </ScrollView>
         </SafeAreaView>
-    );
+    );   
 }
 
 const styles = StyleSheet.create({
@@ -102,43 +82,84 @@ const styles = StyleSheet.create({
         flex: 1,
         alignItems: 'center',
         justifyContent: 'center',
-        padding: 20
+        padding: 20,
+        backgroundColor: "#f0f4f8",
     },
 
     title: {
-        fontSize: 24,
+        fontSize: 26,
         fontWeight: 'bold',
-        marginBottom: 10
+        marginTop: 20,
+        marginBottom: 10,
+        color: "#333",
     },
 
     text: {
+        fontSize: 16,
         marginBottom: 5,
+        color: "#555",
+        textAlign: "center",
     },
 
     input: {
         borderWidth: 1,
+        borderColor: "#ccc",
         padding: 10,
         width: '80%',
-        marginBottom: 10
+        borderRadius: 8,
+        marginBottom: 10,
+        backgroundColor: "#fff",
     },
 
     weatherContainer: {
         marginTop: 20,
-        alignItems: 'center'
+        alignItems: 'center',
+        backgroundColor: "#fff",
+        padding: 15,
+        borderRadius: 10,
+        shadowColor: "#000",
+        shadowOpacity: 0.1,
+        shadowRadius: 5,
+        elevation: 3,
+        width: "90%",
+    },
+
+    weatherText: {
+        fontSize: 16,
+        marginVertical: 2,
+        color: "#444",
+    },
+
+    futureWeatherList: {
+        marginTop: 20,
     },
 
     futureWeatherItem: {
-        backgroundColor: "#ddd",
-        padding: 8,
-        margin: 4,
-        borderRadius: 5,
+        backgroundColor: "#dfe9f3",
+        padding: 10,
+        margin: 5,
+        borderRadius: 8,
         alignItems: "center",
         justifyContent: "center",
-        maxHeight: 100,
+        minWidth: 100,
     },
-    
+
     futureWeatherText: {
         fontSize: 14,
+        fontWeight: "500",
+        color: "#333",
     },
-    
+
+    button: {
+        marginTop: 10,
+        backgroundColor: "#007AFF",
+        padding: 10,
+        borderRadius: 8,
+    },
+
+    buttonText: {
+        color: "#fff",
+        fontSize: 16,
+        fontWeight: "bold",
+    },
 });
