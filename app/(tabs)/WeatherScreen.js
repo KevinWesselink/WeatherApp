@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from "react";
 import { 
     SafeAreaView, Text, TextInput, Button, 
-    StyleSheet, useWindowDimensions, ScrollView
+    StyleSheet, useWindowDimensions, ScrollView, View
 } from "react-native";
 import moment from "moment";
 import { getWeather, getFutureWeather } from "../services/weatherApi";
+import { registerForPushNotificationsAsync, sendPushNotification } from "../services/pushNotifications";
 
 export default function WeatherScreen() {
     const { width, height } = useWindowDimensions();
@@ -12,10 +13,26 @@ export default function WeatherScreen() {
     const [city, setCity] = useState("");
     const [weather, setWeather] = useState(null);
     const [futureWeather, setFutureWeather] = useState([]);
+    const [expoPushToken, setExpoPushToken] = useState(null);
+
+    useEffect(() => {
+       async function getPushToken() {
+            const token = await registerForPushNotificationsAsync();
+            console.log("Token: ", token);
+            if (token) {
+                console.log("✅ Ontvangen Push Token:", token);
+                setExpoPushToken(token);
+            } else {
+                console.log("❌ Geen Push Token ontvangen");
+            }
+        }
+
+        getPushToken();
+    }, []);
 
     const fetchWeather = async () => {
         try {
-            const filteredCity = city.replace(/[^A-Za-zÀ-ÿ\s]/g, "").trimEnd();
+            const filteredCity = city.replace(/[^A-Za-zÀ-ſ\s]/g, "").trimEnd();
             if (!filteredCity.trim()) {
                 alert("Voer een geldige stad in");
                 return;
@@ -23,6 +40,7 @@ export default function WeatherScreen() {
             const response = await getWeather(filteredCity);
             setWeather(response);
             fetchFutureWeather(filteredCity);
+            sendPushNotification(expoPushToken);
         } catch (error) {
             alert("Fout bij ophalen van weer");
             console.log('Error: ', error);
@@ -46,32 +64,38 @@ export default function WeatherScreen() {
     };
 
     return (
-        <SafeAreaView style={[styles.container, { flexDirection: isLandscape ? "row" : "column" }]}>
-            <Text style={styles.title}>Weer App</Text>
-            <TextInput
-                style={styles.input}
-                placeholder="Voer een stad in"
-                value={city}
-                onChangeText={setCity}
-            />
-            <Button title="Weer ophalen" onPress={fetchWeather} />
-            {weather?.name && (
-                <SafeAreaView style={styles.weatherCard}>
-                    <Text style={styles.weatherText}>📍 {weather.name}, {weather.country}</Text>
-                    <Text style={styles.weatherText}>🌡 {weather.temperature}°C, 🌦 {weather.description}</Text>
-                    <Text style={styles.weatherText}>🌬 {weather.wind} m/s</Text>
-                    <Text style={styles.weatherText}>🌧 {weather.rain} mm, ❄️ {weather.snow} mm</Text>
-                </SafeAreaView>
-            )}
-            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                {futureWeather.map((item, index) => (
-                    <SafeAreaView key={index} style={styles.futureWeatherItem}>
-                        <Text>{moment(item.time).format("dddd HH:mm")}</Text>
-                        <Text>{Math.round(item.temperature)}°C, {item.description}</Text>
-                        <Text>{item.wind} m/s</Text>
-                        <Text>🌧 {item.rain} mm, ❄️ {item.snow} mm</Text>
-                    </SafeAreaView>
-                ))}
+        <SafeAreaView style={styles.container}>
+            <ScrollView contentContainerStyle={[styles.content, isLandscape && styles.landscapeContent]}>
+                <View style={styles.inputContainer}>
+                    <Text style={styles.title}>🌍 Weer App</Text>
+                    <TextInput
+                        style={styles.input}
+                        placeholder="Voer een stad in"
+                        value={city}
+                        onChangeText={setCity}
+                    />
+                    <Button title="Weer ophalen" onPress={fetchWeather} />
+                </View>
+
+                {weather?.name && (
+                    <View style={styles.weatherCard}>
+                        <Text style={styles.weatherText}>📍 {weather.name}, {weather.country}</Text>
+                        <Text style={styles.weatherText}>🌡 {weather.temperature}°C, 🌦 {weather.description}</Text>
+                        <Text style={styles.weatherText}>🌬 {weather.wind} m/s</Text>
+                        <Text style={styles.weatherText}>🌧 {weather.rain ?? 0} mm, ❄️ {weather.snow ?? 0} mm</Text>
+                    </View>
+                )}
+
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.futureWeatherList}>
+                    {futureWeather.map((item, index) => (
+                        <View key={index} style={styles.futureWeatherItem}>
+                            <Text style={styles.futureWeatherText}>{moment(item.time).format("dddd HH:mm")}</Text>
+                            <Text style={styles.futureWeatherText}>{Math.round(item.temperature)}°C, {item.description}</Text>
+                            <Text style={styles.futureWeatherText}>💨 {item.wind} m/s</Text>
+                            <Text style={styles.futureWeatherText}>🌧 {item.rain ?? 0} mm, ❄️ {item.snow ?? 0} mm</Text>
+                        </View>
+                    ))}
+                </ScrollView>
             </ScrollView>
         </SafeAreaView>
     );   
@@ -80,38 +104,45 @@ export default function WeatherScreen() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        alignItems: 'center',
-        justifyContent: 'center',
         padding: 20,
         backgroundColor: "#f0f4f8",
+    },
+
+    content: {
+        flexGrow: 1,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+
+    landscapeContent: {
+        flexDirection: "column",
+        alignItems: "center",
+    },
+
+    inputContainer: {
+        alignItems: 'center',
+        width: "90%",
+        maxWidth: 400,
     },
 
     title: {
         fontSize: 26,
         fontWeight: 'bold',
-        marginTop: 20,
         marginBottom: 10,
         color: "#333",
-    },
-
-    text: {
-        fontSize: 16,
-        marginBottom: 5,
-        color: "#555",
-        textAlign: "center",
     },
 
     input: {
         borderWidth: 1,
         borderColor: "#ccc",
         padding: 10,
-        width: '80%',
+        width: '100%',
         borderRadius: 8,
         marginBottom: 10,
         backgroundColor: "#fff",
     },
 
-    weatherContainer: {
+    weatherCard: {
         marginTop: 20,
         alignItems: 'center',
         backgroundColor: "#fff",
@@ -122,16 +153,19 @@ const styles = StyleSheet.create({
         shadowRadius: 5,
         elevation: 3,
         width: "90%",
+        maxWidth: 400,
     },
 
     weatherText: {
         fontSize: 16,
         marginVertical: 2,
         color: "#444",
+        textAlign: "center",
     },
 
     futureWeatherList: {
         marginTop: 20,
+        paddingBottom: 10,
     },
 
     futureWeatherItem: {
@@ -148,18 +182,6 @@ const styles = StyleSheet.create({
         fontSize: 14,
         fontWeight: "500",
         color: "#333",
-    },
-
-    button: {
-        marginTop: 10,
-        backgroundColor: "#007AFF",
-        padding: 10,
-        borderRadius: 8,
-    },
-
-    buttonText: {
-        color: "#fff",
-        fontSize: 16,
-        fontWeight: "bold",
+        textAlign: "center",
     },
 });
