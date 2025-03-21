@@ -8,6 +8,9 @@ import TabBarBackground from '@/components/ui/TabBarBackground';
 import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/useColorScheme';
 
+import Ionicons from '@expo/vector-icons/Ionicons';
+import AntDesign from '@expo/vector-icons/AntDesign';
+
 export default function TabLayout() {
   const colorScheme = useColorScheme();
 
@@ -27,24 +30,17 @@ export default function TabLayout() {
         }),
       }}>
       <Tabs.Screen
-        name="index"
-        options={{
-          title: 'Home',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="house.fill" color={color} />,
-        }}
-      />
-      <Tabs.Screen
-        name="explore"
-        options={{
-          title: 'Explore',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="paperplane.fill" color={color} />,
-        }}
-      />
-      <Tabs.Screen
         name="WeatherScreen"
         options={{
           title: 'Weather',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="cloud.fill" color={color} />,
+          tabBarIcon: ({ color }) => <AntDesign name="cloud" size={24} color="black" />,
+        }}
+      />
+      <Tabs.Screen
+        name="EarthquakeScreen"
+        options={{
+          title: 'Earthquakes',
+          tabBarIcon: ({ color }) => <Ionicons name="earth" size={24} color="black" />,
         }}
       />
     </Tabs>
